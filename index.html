@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>RotaryPay - Authentication Redirect</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             display: flex;
@@ -12,79 +18,361 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            min-height: 100dvh; /* Dynamic viewport height for mobile */
+            padding: 10px;
             text-align: center;
             background-color: #f5f5f5;
             color: #333;
+            line-height: 1.5;
         }
+        
         .container {
-            max-width: 600px;
+            width: 100%;
+            max-width: 500px;
             background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin: auto;
         }
+        
         h1 {
             color: #2c3e50;
             margin-bottom: 20px;
+            font-size: clamp(1.25rem, 4vw, 1.75rem);
+            font-weight: 600;
         }
+        
         h2 {
             color: #3498db;
-            margin-top: 30px;
+            margin-top: 20px;
             margin-bottom: 15px;
+            font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+            font-weight: 500;
         }
+        
         p {
             margin-bottom: 20px;
             line-height: 1.6;
+            font-size: clamp(0.875rem, 2.5vw, 1rem);
+            color: #555;
         }
+        
         .logo {
-            width: 120px;
-            height: 80px;
+            width: min(120px, 30vw);
+            height: auto;
+            aspect-ratio: 3/2;
             margin-bottom: 20px;
+            object-fit: contain;
         }
+        
         .button {
             display: inline-block;
             background-color: #3498db;
             color: white;
-            padding: 12px 24px;
-            border-radius: 5px;
+            padding: 14px 20px;
+            border-radius: 8px;
             text-decoration: none;
-            font-weight: bold;
-            margin: 10px;
-            transition: background-color 0.3s;
+            font-weight: 600;
+            font-size: clamp(0.875rem, 2.5vw, 1rem);
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            min-height: 48px; /* Touch target size */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto 12px auto;
         }
-        .button:hover {
+        
+        .button:hover,
+        .button:focus {
             background-color: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
         }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
         .button.secondary {
             background-color: #2ecc71;
         }
-        .button.secondary:hover {
+        
+        .button.secondary:hover,
+        .button.secondary:focus {
             background-color: #27ae60;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
         }
+        
         .button-container {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
             margin-top: 20px;
+            width: 100%;
         }
+        
+        .success-message,
+        .error-message {
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            font-size: clamp(0.875rem, 2.5vw, 1rem);
+        }
+        
         .success-message {
             background-color: #d4edda;
             color: #155724;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-            display: none;
+            border: 1px solid #c3e6cb;
         }
+        
         .error-message {
             background-color: #f8d7da;
             color: #721c24;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-            display: none;
+            border: 1px solid #f5c6cb;
+        }
+        
+        #message {
+            color: #7f8c8d;
+            font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+            margin-top: 15px;
+        }
+        
+        /* Small mobile devices (320px and up) */
+        @media (max-width: 375px) {
+            body {
+                padding: 8px;
+            }
+            
+            .container {
+                padding: 16px;
+                border-radius: 8px;
+            }
+            
+            .button {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+            
+            .logo {
+                width: min(100px, 25vw);
+                margin-bottom: 16px;
+            }
+        }
+        
+        /* Standard mobile devices (376px to 480px) */
+        @media (min-width: 376px) and (max-width: 480px) {
+            .container {
+                max-width: 90%;
+                padding: 24px;
+            }
+            
+            .button-container {
+                gap: 14px;
+            }
+        }
+        
+        /* Large mobile devices and small tablets (481px to 768px) */
+        @media (min-width: 481px) and (max-width: 768px) {
+            .container {
+                max-width: 480px;
+                padding: 28px;
+            }
+            
+            .button-container {
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+            
+            .button {
+                width: auto;
+                min-width: 180px;
+                max-width: 220px;
+            }
+        }
+        
+        /* Tablets and small desktops (769px to 1024px) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            body {
+                padding: 20px;
+            }
+            
+            .container {
+                max-width: 520px;
+                padding: 32px;
+            }
+            
+            .button-container {
+                flex-direction: row;
+                justify-content: center;
+                gap: 20px;
+            }
+            
+            .button {
+                width: auto;
+                min-width: 200px;
+                max-width: 240px;
+            }
+        }
+        
+        /* Desktop and larger screens (1025px and up) */
+        @media (min-width: 1025px) {
+            body {
+                padding: 30px;
+            }
+            
+            .container {
+                max-width: 600px;
+                padding: 40px;
+            }
+            
+            .button-container {
+                flex-direction: row;
+                justify-content: center;
+                gap: 24px;
+            }
+            
+            .button {
+                width: auto;
+                min-width: 220px;
+                max-width: 260px;
+                padding: 16px 24px;
+            }
+        }
+        
+        /* Landscape orientation on mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body {
+                min-height: 100vh;
+                padding: 8px;
+                justify-content: flex-start;
+                padding-top: 20px;
+            }
+            
+            .container {
+                margin-bottom: 20px;
+                padding: 16px;
+            }
+            
+            .logo {
+                width: min(80px, 20vw);
+                margin-bottom: 12px;
+            }
+            
+            h1 {
+                margin-bottom: 12px;
+                font-size: 1.3rem;
+            }
+            
+            .button-container {
+                flex-direction: row;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            
+            .button {
+                width: auto;
+                min-width: 140px;
+                max-width: 180px;
+                padding: 10px 16px;
+            }
+        }
+        
+        /* High DPI displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .logo {
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: crisp-edges;
+            }
+        }
+        
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            .button {
+                transition: none;
+            }
+            
+            .button:hover {
+                transform: none;
+            }
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+            }
+            
+            .container {
+                background-color: #2d2d2d;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            }
+            
+            h1 {
+                color: #4a9eff;
+            }
+            
+            h2 {
+                color: #5dade2;
+            }
+            
+            p {
+                color: #b0b0b0;
+            }
+            
+            #message {
+                color: #888;
+            }
+            
+            .success-message {
+                background-color: #1e4d2b;
+                color: #a3d9a5;
+                border-color: #2d5a34;
+            }
+            
+            .error-message {
+                background-color: #4d1e1e;
+                color: #f5b7b1;
+                border-color: #5a2d2d;
+            }
+        }
+        
+        /* Focus styles for accessibility */
+        .button:focus {
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+        }
+        
+        /* Ensure touch targets are large enough */
+        @media (pointer: coarse) {
+            .button {
+                min-height: 48px;
+                padding: 14px 20px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 320px) {
+            .container {
+                padding: 12px;
+                margin: 5px;
+            }
+            
+            .button {
+                padding: 10px 14px;
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
@@ -92,27 +380,6 @@
     <div class="container">
         <img src="https://raw.githubusercontent.com/Sudo-4L0N3/RotaryPay-Web-Redirect-Page/master/logo.png" alt="RotaryPay Logo" class="logo" onerror="this.style.display='none'">
         <h1>RotaryPay Authentication</h1>
-        <button id="toggle-debug" style="background: none; border: none; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 12px; margin-bottom: 10px;">Show Debug Info</button>
-        
-        <div id="debug-info" style="display: none; margin-bottom: 20px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; text-align: left; font-size: 12px;">
-            <p><strong>Debug Information:</strong></p>
-            <pre id="debug-url"></pre>
-            <pre id="debug-params"></pre>
-        </div>
-        
-        <script>
-            document.getElementById('toggle-debug').addEventListener('click', function() {
-                const debugInfo = document.getElementById('debug-info');
-                const toggleBtn = document.getElementById('toggle-debug');
-                if (debugInfo.style.display === 'none') {
-                    debugInfo.style.display = 'block';
-                    toggleBtn.textContent = 'Hide Debug Info';
-                } else {
-                    debugInfo.style.display = 'none';
-                    toggleBtn.textContent = 'Show Debug Info';
-                }
-            });
-        </script>
         
         <div id="loading-section">
             <p>Please choose how you would like to proceed with your email verification:</p>
@@ -122,7 +389,7 @@
                 <a href="#" id="open-app-btn" class="button">Open App After Verification</a>
             </div>
             
-            <p id="message" style="margin-top: 20px; color: #7f8c8d;">You can verify your email without opening the app, or verify and open the app if it's installed on this device.</p>
+            <p id="message">You can verify your email without opening the app, or verify and open the app if it's installed on this device.</p>
         </div>
         
         <div id="success-message" class="success-message">
@@ -168,14 +435,7 @@
                 const fullUrl = window.location.href;
                 console.log('Full URL:', fullUrl);
                 
-                // Show debug info
-                const debugUrl = document.getElementById('debug-url');
-                if (debugUrl) {
-                    debugUrl.textContent = 'Full URL: ' + fullUrl;
-                }
-                
                 // Parse URL parameters more thoroughly
-                // First, check the query parameters
                 const urlParams = new URLSearchParams(window.location.search);
                 console.log('URL Search Params:', Object.fromEntries(urlParams.entries()));
                 
@@ -209,7 +469,6 @@
                 console.log('Hash Params:', hashParams);
                 
                 // Check for Supabase specific formats
-                // Sometimes Supabase uses a special format with the token in the URL path
                 let token = null;
                 
                 // Method 1: Check hash parameters
@@ -263,18 +522,6 @@
                 
                 // Determine the verification type
                 const type = hashParams['type'] || urlParams.get('type') || 'signup';
-                
-                // Update debug info
-                const debugParams = document.getElementById('debug-params');
-                if (debugParams) {
-                    debugParams.textContent = 'Token: ' + (token || 'Not found') + '\n' +
-                                             'Type: ' + type + '\n' +
-                                             'URL Params: ' + JSON.stringify(Object.fromEntries(urlParams.entries()), null, 2) + '\n' +
-                                             'Hash Params: ' + JSON.stringify(hashParams, null, 2);
-                }
-                
-                // Show debug info
-                document.getElementById('debug-info').style.display = 'block';
                 
                 console.log('Token found:', token);
                 console.log('Type:', type);
