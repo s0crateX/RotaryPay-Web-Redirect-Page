@@ -230,7 +230,14 @@
                     token = confirmUrlParams.get('token') || confirmUrlParams.get('access_token');
                 }
                 
-                // Method 4: Check if this is a Supabase email confirmation link
+                // Method 4: Check for the code parameter (Supabase often uses this)
+                if (!token && urlParams.get('code')) {
+                    const code = urlParams.get('code');
+                    console.log('Found code parameter:', code);
+                    token = 'supabase_code_' + code;
+                }
+                
+                // Method 5: Check if this is a Supabase email confirmation link
                 if (!token) {
                     // Supabase email confirmation links often have these parameters
                     if (urlParams.get('type') === 'signup' || 
@@ -245,7 +252,7 @@
                     }
                 }
                 
-                // Method 5: Last resort - check if any part of the URL contains token-like strings
+                // Method 6: Last resort - check if any part of the URL contains token-like strings
                 if (!token && fullUrl.includes('token=')) {
                     const tokenMatch = fullUrl.match(/token=([^&]+)/);
                     if (tokenMatch && tokenMatch[1]) {
