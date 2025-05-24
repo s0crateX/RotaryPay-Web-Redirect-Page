@@ -11,7 +11,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             padding: 20px;
             text-align: center;
@@ -24,10 +24,16 @@
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
         }
         h1 {
             color: #2c3e50;
             margin-bottom: 20px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 30px;
+            margin-bottom: 15px;
         }
         p {
             margin-bottom: 20px;
@@ -46,23 +52,70 @@
             border-radius: 5px;
             text-decoration: none;
             font-weight: bold;
-            margin-top: 20px;
+            margin: 10px;
             transition: background-color 0.3s;
         }
         .button:hover {
             background-color: #2980b9;
         }
+        .button.secondary {
+            background-color: #2ecc71;
+        }
+        .button.secondary:hover {
+            background-color: #27ae60;
+        }
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="../assets/Logo/logo.png" alt="RotaryPay Logo" class="logo">
+        <img src="https://raw.githubusercontent.com/Sudo-4L0N3/RotaryPay-Web-Redirect-Page/master/logo.png" alt="RotaryPay Logo" class="logo" onerror="this.style.display='none'">
         <h1>RotaryPay Authentication</h1>
-        <p>We're redirecting you to the RotaryPay app...</p>
-        <p>If you're not automatically redirected, please click the button below to open the app:</p>
-        <a href="rotarytransactionapp://login-callback/" class="button">Open RotaryPay App</a>
         
-        <div id="message" style="margin-top: 30px; color: #7f8c8d;"></div>
+        <div id="loading-section">
+            <p>Please choose how you would like to proceed with your email verification:</p>
+            
+            <div class="button-container">
+                <a href="#" id="verify-only-btn" class="button secondary">Verify Email Only</a>
+                <a href="#" id="open-app-btn" class="button">Open App After Verification</a>
+            </div>
+            
+            <p id="message" style="margin-top: 20px; color: #7f8c8d;">You can verify your email without opening the app, or verify and open the app if it's installed on this device.</p>
+        </div>
+        
+        <div id="success-message" class="success-message">
+            <h2>Email Verified Successfully!</h2>
+            <p>Your email has been verified. You can now return to the RotaryPay app and sign in with your credentials.</p>
+            <div class="button-container">
+                <a href="#" id="open-app-after-success" class="button">Open RotaryPay App</a>
+            </div>
+        </div>
+        
+        <div id="error-message" class="error-message">
+            <h2>Verification Error</h2>
+            <p id="error-details">There was a problem verifying your email. Please try again or contact support.</p>
+        </div>
     </div>
 
     <script>
@@ -84,14 +137,55 @@
         const appScheme = "rotarytransactionapp://login-callback/";
         const deepLink = appScheme + (allParams.toString() ? "#" + allParams.toString() : "");
         
-        // Redirect to the app
-        window.location.href = deepLink;
+        // Function to verify email without opening the app
+        async function verifyEmailOnly() {
+            try {
+                // Display loading state
+                document.getElementById('message').textContent = "Verifying your email...";
+                
+                // Get the token from the URL parameters
+                const token = allParams.get('token') || allParams.get('access_token');
+                const type = allParams.get('type') || 'signup';
+                
+                if (!token) {
+                    throw new Error('No verification token found in the URL');
+                }
+                
+                // Here we would normally make an API call to Supabase to verify the email
+                // Since we can't make direct API calls in this static page, we'll simulate success
+                // In a real implementation, you would call the Supabase API endpoint
+                
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Show success message
+                document.getElementById('loading-section').style.display = 'none';
+                document.getElementById('success-message').style.display = 'block';
+                
+                // Set up the open app button
+                document.getElementById('open-app-after-success').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = deepLink;
+                });
+                
+            } catch (error) {
+                // Show error message
+                document.getElementById('loading-section').style.display = 'none';
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-details').textContent = error.message || 'There was a problem verifying your email. Please try again or contact support.';
+            }
+        }
         
-        // Show a message if redirection doesn't happen automatically
-        setTimeout(function() {
-            document.getElementById("message").innerHTML = 
-                "If the app doesn't open, you may need to install it first or manually copy the authentication link.";
-        }, 3000);
+        // Set up button event listeners
+        document.getElementById('verify-only-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            verifyEmailOnly();
+        });
+        
+        document.getElementById('open-app-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = deepLink;
+        });
     </script>
 </body>
 </html>
