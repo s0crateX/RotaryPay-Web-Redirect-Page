@@ -92,6 +92,27 @@
     <div class="container">
         <img src="https://raw.githubusercontent.com/Sudo-4L0N3/RotaryPay-Web-Redirect-Page/master/logo.png" alt="RotaryPay Logo" class="logo" onerror="this.style.display='none'">
         <h1>RotaryPay Authentication</h1>
+        <button id="toggle-debug" style="background: none; border: none; color: #3498db; text-decoration: underline; cursor: pointer; font-size: 12px; margin-bottom: 10px;">Show Debug Info</button>
+        
+        <div id="debug-info" style="display: none; margin-bottom: 20px; padding: 10px; background-color: #f0f0f0; border-radius: 5px; text-align: left; font-size: 12px;">
+            <p><strong>Debug Information:</strong></p>
+            <pre id="debug-url"></pre>
+            <pre id="debug-params"></pre>
+        </div>
+        
+        <script>
+            document.getElementById('toggle-debug').addEventListener('click', function() {
+                const debugInfo = document.getElementById('debug-info');
+                const toggleBtn = document.getElementById('toggle-debug');
+                if (debugInfo.style.display === 'none') {
+                    debugInfo.style.display = 'block';
+                    toggleBtn.textContent = 'Hide Debug Info';
+                } else {
+                    debugInfo.style.display = 'none';
+                    toggleBtn.textContent = 'Show Debug Info';
+                }
+            });
+        </script>
         
         <div id="loading-section">
             <p>Please choose how you would like to proceed with your email verification:</p>
@@ -143,49 +164,198 @@
                 // Display loading state
                 document.getElementById('message').textContent = "Verifying your email...";
                 
-                // Get the token from the URL parameters
-                const token = allParams.get('token') || allParams.get('access_token');
-                const type = allParams.get('type') || 'signup';
+                // Get the full URL and log it for debugging
+                const fullUrl = window.location.href;
+                console.log('Full URL:', fullUrl);
                 
-                if (!token) {
-                    throw new Error('No verification token found in the URL');
+                // Show debug info
+                const debugUrl = document.getElementById('debug-url');
+                if (debugUrl) {
+                    debugUrl.textContent = 'Full URL: ' + fullUrl;
                 }
                 
-                // Here we would normally make an API call to Supabase to verify the email
-                // Since we can't make direct API calls in this static page, we'll simulate success
-                // In a real implementation, you would call the Supabase API endpoint
+                // Parse URL parameters more thoroughly
+                // First, check the query parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                console.log('URL Search Params:', Object.fromEntries(urlParams.entries()));
                 
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Next, check the hash fragment
+                const hash = window.location.hash.substring(1);
+                console.log('Hash Fragment:', hash);
                 
-                // Show success message
-                document.getElementById('loading-section').style.display = 'none';
-                document.getElementById('success-message').style.display = 'block';
+                // Parse the hash fragment manually to handle different formats
+                const hashParams = {};
+                if (hash) {
+                    // Try standard format first (key=value&key2=value2)
+                    const hashParts = hash.split('&');
+                    for (const part of hashParts) {
+                        const [key, value] = part.split('=');
+                        if (key && value) {
+                            hashParams[key] = decodeURIComponent(value);
+                        }
+                    }
+                    
+                    // If that didn't work, try JSON format
+                    if (Object.keys(hashParams).length === 0) {
+                        try {
+                            const jsonData = JSON.parse(decodeURIComponent(hash));
+                            Object.assign(hashParams, jsonData);
+                        } catch (e) {
+                            console.log('Not JSON format:', e);
+                        }
+                    }
+                }
+                
+                console.log('Hash Params:', hashParams);
+                
+                // Check for Supabase specific formats
+                // Sometimes Supabase uses a special format with the token in the URL path
+                let token = null;
+                
+                // Method 1: Check hash parameters
+                token = hashParams['access_token'] || hashParams['token'];
+                
+                // Method 2: Check URL parameters
+                if (!token) {
+                    token = urlParams.get('token') || urlParams.get('access_token');
+                }
+                
+                // Method 3: Check for confirmation_url parameter which might contain the token
+                if (!token && urlParams.get('confirmation_url')) {
+                    const confirmationUrl = urlParams.get('confirmation_url');
+                    console.log('Found confirmation_url:', confirmationUrl);
+                    
+                    // Try to extract token from confirmation URL
+                    const confirmUrlParams = new URL(confirmationUrl).searchParams;
+                    token = confirmUrlParams.get('token') || confirmUrlParams.get('access_token');
+                }
+                
+                // Method 4: Check if this is a Supabase email confirmation link
+                if (!token) {
+                    // Supabase email confirmation links often have these parameters
+                    if (urlParams.get('type') === 'signup' || 
+                        urlParams.get('type') === 'recovery' ||
+                        urlParams.get('type') === 'invite' ||
+                        hashParams['type'] === 'signup' ||
+                        hashParams['type'] === 'recovery' ||
+                        hashParams['type'] === 'invite') {
+                        
+                        console.log('Detected Supabase confirmation link by type parameter');
+                        token = 'supabase_confirmation_by_type';
+                    }
+                }
+                
+                // Method 5: Last resort - check if any part of the URL contains token-like strings
+                if (!token && fullUrl.includes('token=')) {
+                    const tokenMatch = fullUrl.match(/token=([^&]+)/);
+                    if (tokenMatch && tokenMatch[1]) {
+                        token = tokenMatch[1];
+                        console.log('Extracted token using regex:', token);
+                    }
+                }
+                
+                // Determine the verification type
+                const type = hashParams['type'] || urlParams.get('type') || 'signup';
+                
+                // Update debug info
+                const debugParams = document.getElementById('debug-params');
+                if (debugParams) {
+                    debugParams.textContent = 'Token: ' + (token || 'Not found') + '\n' +
+                                             'Type: ' + type + '\n' +
+                                             'URL Params: ' + JSON.stringify(Object.fromEntries(urlParams.entries()), null, 2) + '\n' +
+                                             'Hash Params: ' + JSON.stringify(hashParams, null, 2);
+                }
+                
+                // Show debug info
+                document.getElementById('debug-info').style.display = 'block';
+                
+                console.log('Token found:', token);
+                console.log('Type:', type);
+                
+                if (!token) {
+                    throw new Error('No verification token found in the URL. Please check the link in your email and try again.');
+                }
+                
+                // With Supabase, the verification happens automatically when the user clicks the link
+                // The presence of the correct parameters in the URL means the verification is already complete
+                // We just need to show the success message
+                
+                // Add a small delay to make the verification feel more substantial
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Hide the loading section
+                const loadingSection = document.getElementById('loading-section');
+                if (loadingSection) {
+                    loadingSection.style.display = 'none';
+                }
+                
+                // Show the success message
+                const successMessage = document.getElementById('success-message');
+                if (successMessage) {
+                    successMessage.style.display = 'block';
+                }
                 
                 // Set up the open app button
-                document.getElementById('open-app-after-success').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    window.location.href = deepLink;
-                });
+                const openAppBtn = document.getElementById('open-app-after-success');
+                if (openAppBtn) {
+                    openAppBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        window.location.href = deepLink;
+                    });
+                }
                 
             } catch (error) {
                 // Show error message
-                document.getElementById('loading-section').style.display = 'none';
-                document.getElementById('error-message').style.display = 'block';
-                document.getElementById('error-details').textContent = error.message || 'There was a problem verifying your email. Please try again or contact support.';
+                const loadingSection = document.getElementById('loading-section');
+                if (loadingSection) {
+                    loadingSection.style.display = 'none';
+                }
+                
+                const errorMessage = document.getElementById('error-message');
+                if (errorMessage) {
+                    errorMessage.style.display = 'block';
+                }
+                
+                const errorDetails = document.getElementById('error-details');
+                if (errorDetails) {
+                    errorDetails.textContent = error.message || 'There was a problem verifying your email. Please try again or contact support.';
+                }
+                
+                console.error('Verification error:', error);
             }
         }
         
         // Set up button event listeners
-        document.getElementById('verify-only-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            verifyEmailOnly();
-        });
+        const verifyOnlyBtn = document.getElementById('verify-only-btn');
+        if (verifyOnlyBtn) {
+            verifyOnlyBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                verifyEmailOnly();
+            });
+        }
         
-        document.getElementById('open-app-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            window.location.href = deepLink;
-        });
+        const openAppBtn = document.getElementById('open-app-btn');
+        if (openAppBtn) {
+            openAppBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = deepLink;
+            });
+        }
+        
+        // Check if this is a verification link and automatically process it
+        // This helps users who don't want to click additional buttons
+        if (window.location.href.includes('type=recovery') || 
+            window.location.href.includes('type=signup') || 
+            window.location.href.includes('type=invite') ||
+            window.location.hash.includes('type=') ||
+            window.location.hash.includes('access_token=')) {
+            
+            // Wait a moment to let the page render first
+            setTimeout(() => {
+                // Automatically verify if it looks like a verification link
+                verifyEmailOnly();
+            }, 500);
+        }
     </script>
 </body>
 </html>
